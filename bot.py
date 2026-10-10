@@ -5,11 +5,11 @@ import secrets
 import os
 from datetime import datetime
 
-# ====== НАСТРОЙКИ (берутся из переменных Amvera) ======
+# ====== НАСТРОЙКИ ======
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 COMMISSION = 0.05  # 5% комиссия
-# =====================================================
+# =======================
 
 bot = telebot.TeleBot(TOKEN)
 user_data = {}
@@ -127,12 +127,8 @@ def deal_card(code, viewer_id):
     markup = types.InlineKeyboardMarkup()
 
     if d["status"] == "awaiting_payment":
-        if viewer_id == ADMIN_ID:
-            markup.add(types.InlineKeyboardButton(
-                "💳 Оплатить (тест)", callback_data=f"pay_{code}"))
-        else:
-            markup.add(types.InlineKeyboardButton(
-                "💳 Оплатить", callback_data=f"pay_locked_{code}"))
+        markup.add(types.InlineKeyboardButton(
+            "💳 Оплатить", callback_data=f"pay_{code}"))
 
     elif d["status"] == "paid":
         if viewer_id == d["buyer_id"]:
@@ -175,8 +171,7 @@ def start(message):
         "Это бот для P2P-сделок с NFT за ₽ или ⭐.\n\n"
         "• Продавец создаёт сделку и получает ссылку\n"
         "• Покупатель открывает ссылку и оплачивает\n"
-        "• После подтверждения NFT считается переданным\n\n"
-        "⚠️ Бот в тестовом режиме. Оплата пока работает только у админа.",
+        "• После подтверждения NFT считается переданным",
         reply_markup=main_menu(message.from_user.id)
     )
 
@@ -321,19 +316,8 @@ def callback(call):
     data = call.data
     uid = call.from_user.id
 
-    if data.startswith("pay_locked_"):
-        bot.answer_callback_query(
-            call.id,
-            "⚠️ Оплата появится позже. Пока в тестовом режиме платит только администратор.",
-            show_alert=True
-        )
-        return
-
     if data.startswith("pay_"):
         code = data[4:]
-        if uid != ADMIN_ID:
-            bot.answer_callback_query(call.id, "❌ Нет доступа")
-            return
         d = get_deal(code)
         if not d:
             bot.answer_callback_query(call.id, "Сделка не найдена")
@@ -343,7 +327,7 @@ def callback(call):
             return
 
         update_deal(code, status="paid", paid_at=datetime.now().isoformat())
-        bot.answer_callback_query(call.id, "✅ Оплата проведена (тест)")
+        bot.answer_callback_query(call.id, "✅ Оплата проведена")
 
         text, markup = deal_card(code, uid)
         bot.edit_message_text(text, call.message.chat.id,
