@@ -17,7 +17,7 @@ user_data = {}
 
 # ============ БАЗА ДАННЫХ ============
 def db():
-    conn = sqlite3.connect("deals.db")
+    conn = sqlite3.connect("/data/deals.db")
     conn.row_factory = sqlite3.Row
     return conn
 
